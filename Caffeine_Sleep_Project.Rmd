@@ -1,0 +1,123 @@
+---
+title: "Caffeine and Sleep: A 21-Day Personal Data Study"
+author: "Ziya Alyarbayov"
+date: "Fall 2026"
+output: pdf_document
+---
+
+# Research Question
+
+How is caffeine consumption related to my nightly sleep duration?
+
+# Data and Method
+
+I recorded caffeine consumption (yes/no), caffeine amount in milligrams, and sleep hours for 21 consecutive days from October 19 through November 8, 2026. Caffeine timing was excluded from this analysis. Each row represents one calendar day.
+
+```{r setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+```
+
+```{r data}
+sleep_data <- tibble(
+  Date = seq(as.Date("2026-10-19"), as.Date("2026-11-08"), by = "day"),
+  Caffeine = c("Yes","Yes","Yes","No","Yes","No","No","No","Yes","No",
+               "Yes","No","No","Yes","Yes","Yes","No","No","Yes","No","Yes"),
+  Caffeine_mg = c(65,65,20,0,60,0,0,0,46,0,195,0,0,70,210,46,0,0,120,0,46),
+  Sleep_Hours = c(9,6,7,10,8,9,8,10,6,8,5.5,7,10,6.5,5.5,8,9,9,7.5,9.5,7)
+)
+
+sleep_data
+```
+
+# Graph 1: Sleep Duration Over Time
+
+```{r graph1, fig.width=7, fig.height=4}
+ggplot(sleep_data, aes(x = Date, y = Sleep_Hours)) +
+  geom_line(color = "steelblue") +
+  geom_point(color = "steelblue") +
+  labs(title = "Nightly Sleep Duration Over 21 Days",
+       x = "Date", y = "Sleep (hours)") +
+  theme_minimal()
+```
+
+This line graph answers how sleep duration changed across the 21-day period. A line graph is appropriate because the observations are recorded in chronological order. Sleep varied from 5.5 to 10 hours, with no consistent increase or decrease throughout the period.
+
+# Graph 2: Daily Caffeine Amount Over Time
+
+```{r graph2, fig.width=7, fig.height=4}
+ggplot(sleep_data, aes(x = Date, y = Caffeine_mg)) +
+  geom_col(fill = "darkorange") +
+  labs(title = "Daily Caffeine Consumption Over 21 Days",
+       x = "Date", y = "Caffeine (mg)") +
+  theme_minimal()
+```
+
+This graph answers how much caffeine was consumed each day and when caffeine-free days occurred. A column graph clearly shows daily amounts, including zero-caffeine days. Consumption ranged from 0 to 210 mg.
+
+# Graph 3: Sleep on Caffeine and Non-Caffeine Days
+
+```{r graph3, fig.width=7, fig.height=4}
+ggplot(sleep_data, aes(x = Caffeine, y = Sleep_Hours, fill = Caffeine)) +
+  geom_boxplot() +
+  labs(title = "Sleep Duration by Caffeine Consumption",
+       x = "Caffeine consumed?", y = "Sleep (hours)") +
+  scale_fill_manual(values = c("No" = "seagreen3", "Yes" = "darkorange")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+This boxplot compares the distribution of sleep hours on caffeine and non-caffeine days. A boxplot is useful for comparing medians, spread, and possible outliers between two groups. Sleep was generally lower on caffeine days in this dataset.
+
+# Graph 4: Caffeine Amount and Sleep
+
+```{r graph4, fig.width=7, fig.height=4}
+ggplot(sleep_data, aes(x = Caffeine_mg, y = Sleep_Hours)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Caffeine Amount and Nightly Sleep",
+       x = "Caffeine (mg)", y = "Sleep (hours)") +
+  theme_minimal()
+```
+
+This scatterplot examines the relationship between caffeine amount and sleep duration. A scatterplot is appropriate for two numeric variables, and the regression line summarizes the overall linear trend. The points suggest a negative association, although the small sample and day-to-day variation limit interpretation.
+
+# Statistical Analysis: Two-Sample Welch t-Test
+
+## Research question
+
+Do mean sleep hours differ between days when caffeine was consumed and days when it was not?
+
+## Hypotheses
+
+- **H₀:** The mean sleep duration is equal on caffeine and non-caffeine days.
+- **H₁:** The mean sleep duration differs between caffeine and non-caffeine days.
+
+## Why this method?
+
+A two-sample Welch t-test compares the means of two independent groups and does not require equal population variances. Each day belongs to either the caffeine or non-caffeine group.
+
+```{r ttest}
+caffeine_days <- sleep_data %>%
+  filter(Caffeine == "Yes") %>%
+  pull(Sleep_Hours)
+
+no_caffeine_days <- sleep_data %>%
+  filter(Caffeine == "No") %>%
+  pull(Sleep_Hours)
+
+mean(caffeine_days)
+mean(no_caffeine_days)
+
+t.test(caffeine_days, no_caffeine_days, var.equal = FALSE)
+```
+
+## Results and interpretation
+
+There were 11 caffeine days and 10 non-caffeine days. Average sleep was approximately 6.91 hours on caffeine days and 8.95 hours on non-caffeine days, a difference of about 2.04 hours. The Welch t-test gives approximately *t* = -4.35 and *p* = 0.00034.
+
+Because the p-value is below 0.05, I reject the null hypothesis for this dataset and find evidence of a difference in mean sleep duration between the two types of days. This is an observational personal-data study, so the result does not prove caffeine caused the difference. Other factors, such as stress, schedule, or activity, may affect sleep, and the sample covers only 21 days.
+
+# Conclusion
+
+Across these 21 days, sleep was lower on days when I consumed caffeine than on days when I did not. The statistical test indicates a difference in average sleep duration, but the data cannot establish causation. A longer study with additional variables could help investigate this pattern more carefully.
